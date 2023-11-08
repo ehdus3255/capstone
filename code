@@ -1,0 +1,51 @@
+# 주피터 노트북으로 작성함
+
+import pandas as pd
+from sklearn.manifold import TSNE
+import seaborn as sns
+import matplotlib.pyplot as plt
+from matplotlib import font_manager as fm
+
+# 데이터 불러오기
+data = pd.read_excel("C:\\Users\\RYUJIWOO\\Desktop\\tving\\전체데이터\\티빙.xlsx")
+
+# 장르를 번호로 매핑
+genre_mapping = {'드라마': 1, '로맨스': 2, '예능': 3, '다큐멘터리': 4, 'SF': 5, '판타지': 6, '모험': 7,
+                 '코미디': 8, '액션': 9, '스릴러/미스터리/범죄': 10, '공포': 11, '애니메이션': 12,
+                 '음악': 13, '시대극': 14, '스포츠': 15, '키즈': 16, '교양': 17}
+
+# 장르 번호를 장르 이름으로 매핑
+data['장르_번호'] = data['장르'].apply(lambda x: [genre_mapping[genre] for genre in x.split(', ')])
+data['장르_이름'] = data['장르_번호'].apply(lambda x: [list(genre_mapping.keys())[list(genre_mapping.values()).index(i)] for i in x])
+
+# 각 작품에 대해 17개의 장르에 대한 비중 계산
+data['장르_비중'] = data['장르_번호'].apply(lambda x: [x.count(i) / len(x) * 100 for i in range(1, 18)])
+
+# 한글 폰트 경로 설정 (본인의 환경에 맞게 설정)
+font_path = "C:/Windows/Fonts/malgun.ttf"  # 맑은 고딕 폰트 경로
+
+# 폰트 설정
+font_prop = fm.FontProperties(fname=font_path, size=14)
+plt.rcParams['font.family'] = font_prop.get_name()
+
+# TSNE 적용
+tsne = TSNE(n_components=2, random_state=42)
+coordinates = tsne.fit_transform(data['장르_비중'].tolist())
+
+# 장르별 색 정의
+genre_colors = sns.color_palette("husl", 17)
+
+# 시각화
+plt.figure(figsize=(10, 8))
+for i in range(17):
+    genre_indices = data['장르_번호'].apply(lambda x: i + 1 in x)
+    label_genre_names = data.loc[genre_indices, '장르_이름'].tolist()  # 장르 이름들을 리스트로 가져오기
+    for genre_name in label_genre_names:
+        plt.scatter(coordinates[genre_indices, 0], coordinates[genre_indices, 1], label=f'장르 {genre_name}', color=genre_colors[i])
+
+
+# 범례 표시
+plt.legend()
+
+plt.title('KSNE를 이용한 장르 시각화')
+plt.show()
